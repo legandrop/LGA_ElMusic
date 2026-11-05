@@ -1,0 +1,6 @@
+html, body { margin: 0; width: 60px; height: 54px; background: #202020; color: #d8d8d8; color-scheme: dark; }
+body { display: flex; align-items: center; padding-left: 12px; box-sizing: border-box; app-region: drag; }
+button { app-region: no-drag; display: grid; place-items: center; width: 36px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: inherit; font: 22px 'Segoe UI',sans-serif; cursor: pointer; }
+button svg { fill: currentColor; }
+button:hover { background: #ffffff0d; color: white; }
+button:focus-visible { outline: 2px solid #fa2d48; outline-offset: -2px; }

@@ -1,0 +1,13 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.iss text eol=crlf
+*.png binary
+*.ico binary
+*.icns binary
+*.zip binary
+*.dmg binary
+# Keep the upstream OFL text as is, including its intentional trailing space.
+src/ui/fonts/LICENSE.txt whitespace=-blank-at-eol
+streamdeck/com.lga.elmusic.sdPlugin/ui/fonts/LICENSE.txt whitespace=-blank-at-eol

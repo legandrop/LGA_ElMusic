@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Add to Playlist</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; padding: 12px 12px 12px 0; background: #2d2d2d; color: #d8d8d8; font: 12px -apple-system, 'Segoe UI', sans-serif; }
+    .row { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 8px; margin-bottom: 8px; }
+    label { text-align: right; color: #969696; }
+    select, button { height: 26px; border: 0; border-radius: 3px; background: #3d3d3d; color: #d8d8d8; font: inherit; }
+    select { min-width: 0; padding: 0 6px; }
+    button { padding: 0 10px; cursor: pointer; }
+    button:hover { background: #4a4a4a; }
+    button:disabled, select:disabled { opacity: .5; cursor: default; }
+    p { margin: 0 0 0 104px; color: #969696; line-height: 1.4; }
+    textarea { min-width: 0; height: 40px; padding: 4px 6px; border: 0; border-radius: 3px; background: #3d3d3d; color: #d8d8d8; font: inherit; resize: none; }
+    .row.top { align-items: start; margin-top: 12px; }
+    .row.top label { padding-top: 5px; }
+    canvas { width: 72px; height: 72px; border-radius: 8px; }
+    @font-face { font-family: Pretendard; src: url('fonts/PretendardVariable.woff2') format('woff2'); font-weight: 100 900; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <label for="playlist">Playlist</label>
+    <select id="playlist" disabled><option>Loading…</option></select>
+    <button id="refresh" type="button" title="Reload playlists">Reload</button>
+  </div>
+  <p id="status" aria-live="polite">Reading your editable playlists from El Music…</p>
+  <div class="row top">
+    <label for="label">Key label</label>
+    <textarea id="label" rows="2" maxlength="40" placeholder="Playlist name" spellcheck="false"></textarea>
+    <span></span>
+  </div>
+  <p>Optional short name for the key. Press Enter to choose where the second line starts.</p>
+  <div class="row top">
+    <label>Key</label>
+    <canvas id="preview" width="144" height="144" aria-label="Key preview"></canvas>
+    <span></span>
+  </div>
+  <script src="key-glyph.js"></script>
+  <script>
+    'use strict';
+    const select = document.getElementById('playlist');
+    const refresh = document.getElementById('refresh');
+    const status = document.getElementById('status');
+    const labelField = document.getElementById('label');
+    const preview = document.getElementById('preview');
+    let socket, uuid, action, settings = {}, answer, typing;
+
+    // Imagen de la tecla: nombre arriba en 1 o 2 líneas y glifo abajo. Se dibuja acá
+    // porque el inspector tiene canvas y fuentes; el plugin sólo la aplica. Cambiar imageVersion vuelve a dibujar las guardadas.
+    const imageVersion = 1;
+    const glyph = new Image();
+    glyph.src = window.keyGlyph;
+    const keyFont = size => `600 ${size}px Pretendard, 'Segoe UI', -apple-system, sans-serif`;
+    const ready = Promise.all([document.fonts.load(keyFont(28)).catch(() => {}), glyph.decode().catch(() => {})]);
+    const box = { x: 72, y: 40, w: 128, h: 66 };
+    // Entre 1 línea y el corte en 2 más parejo gana la letra más grande (1 línea con 3 px de ventaja); Enter fija el corte;
+    // si nada entra con 15 px se recorta con «…».
+    const fit = (ctx, text) => {
+      const width = (line, size) => { ctx.font = keyFont(size); return ctx.measureText(line).width; };
+      const fits = (lines, size) => lines.every(line => width(line, size) <= box.w) && size * (lines.length === 1 ? 1.1 : 2.1) <= box.h;
+      const largest = (lines, min) => { for (let size = 28; size >= min; size--) if (fits(lines, size)) return size; };
+      const clip = (lines, size) => ({ size, lines: lines.map(line => {
+        if (width(line, size) <= box.w) return line;
+        while (line.length > 1 && width(`${line}…`, size) > box.w) line = line.slice(0, -1);
+        return `${line.trimEnd()}…`;
+      }) });
+      const forced = text.split('\n').map(line => line.trim()).filter(Boolean);
+      if (forced.length > 1) { const size = largest(forced, 15); return size ? { lines: forced, size } : clip(forced, 15); }
+      const words = (forced[0] || '').split(/\s+/).filter(Boolean);
+      let best;
+      const single = largest([words.join(' ')], 18);
+      if (single) best = { lines: [words.join(' ')], size: single, score: single + 3 };
+      for (let i = 1; i < words.length; i++) {
+        const lines = [words.slice(0, i).join(' '), words.slice(i).join(' ')], size = largest(lines, 15);
+        if (size && (!best || size > best.score)) best = { lines, size, score: size };
+      }
+      if (best) return best;
+      const half = Math.ceil(words.length / 2);
+      return clip(words.length > 1 ? [words.slice(0, half).join(' '), words.slice(half).join(' ')] : [words.join(' ')], 15);
+    };
+    // Devuelve el PNG para el plugin, o '' si no hay playlist o el canvas no se puede exportar.
+    const render = () => {
+      const ctx = preview.getContext('2d');
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 144, 144);
+      // El glifo de 144 px trae su propio fondo negro: se toma el cuadrado del dibujo.
+      if (glyph.complete && glyph.naturalWidth) ctx.drawImage(glyph, 30, 30, 84, 84, 40, 74, 64, 64);
+      if (!settings.playlistId) return '';
+      const { lines, size } = fit(ctx, labelField.value.trim() || settings.playlistName || '');
+      ctx.font = keyFont(size); ctx.fillStyle = '#f2f2f2'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const height = size * 1.08, top = box.y - (lines.length - 1) * height / 2;
+      lines.forEach((line, index) => ctx.fillText(line, box.x, top + index * height));
+      try { return preview.toDataURL('image/png'); } catch { return ''; }
+    };
+    const save = () => {
+      const label = labelField.value.slice(0, 40);
+      const base = settings.playlistId ? { playlistId: settings.playlistId, playlistName: settings.playlistName } : {};
+      settings = { ...base, ...(label.trim() ? { label } : {}) };
+      const image = render();
+      if (image) settings = { ...settings, image, imageVersion };
+      send({ event: 'setSettings', context: uuid, payload: settings });
+    };
+    const messages = {
+      'not-running': 'Open El Music to load your playlists.', 'signed-out': 'Sign in to Apple Music in El Music.',
+      unavailable: 'El Music is still loading. Try Reload in a moment.', timeout: 'El Music did not answer. Try Reload.',
+      'no-answer': 'The Stream Deck plugin did not answer. Try Reload.'
+    };
+    const send = message => { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); };
+    const load = () => {
+      select.disabled = true; refresh.disabled = true; status.textContent = 'Reading your editable playlists from El Music…';
+      // Los mensajes del inspector van con el uuid de su registro, como exige Stream Deck.
+      send({ event: 'sendToPlugin', action, context: uuid, payload: { request: 'playlists' } });
+      clearTimeout(answer);
+      answer = setTimeout(() => show({ error: 'no-answer' }), 15000);
+    };
+    const option = (value, text) => { const item = document.createElement('option'); item.value = value; item.textContent = text; return item; };
+    const show = payload => {
+      clearTimeout(answer);
+      refresh.disabled = false;
+      if (!Array.isArray(payload?.playlists)) {
+        select.replaceChildren(settings.playlistId ? option(settings.playlistId, settings.playlistName || 'Saved playlist') : option('', 'Unavailable'));
+        status.textContent = messages[payload?.error] || 'Playlists could not be loaded. Try Reload.';
+        return;
+      }
+      const playlists = [...payload.playlists].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+      const items = [option('', 'Choose a playlist…'), ...playlists.map(item => option(item.id, item.name))];
+      if (settings.playlistId && !playlists.some(item => item.id === settings.playlistId))
+        items.splice(1, 0, option(settings.playlistId, `${settings.playlistName || 'Saved playlist'} (not found)`));
+      select.replaceChildren(...items);
+      select.value = settings.playlistId || '';
+      select.disabled = false;
+      status.textContent = playlists.length ? 'The playing song is added to this playlist when you press the key.' : 'No editable playlists were found.';
+      // Si la playlist cambió de nombre en Apple Music, la tecla sin nombre propio se vuelve a dibujar.
+      const current = playlists.find(item => item.id === settings.playlistId);
+      if (current && current.name !== settings.playlistName) { settings = { ...settings, playlistName: current.name }; void ready.then(save); }
+    };
+    select.addEventListener('change', () => {
+      const chosen = select.selectedOptions[0];
+      settings = select.value ? { playlistId: select.value, playlistName: chosen.textContent.replace(/ \(not found\)$/, '') } : {};
+      save();
+    });
+    labelField.addEventListener('input', () => {
+      // Como mucho dos líneas: un tercer Enter se vuelve espacio.
+      const [first, ...rest] = labelField.value.split('\n');
+      if (rest.length > 1) labelField.value = `${first}\n${rest.join(' ')}`;
+      clearTimeout(typing);
+      render();
+      typing = setTimeout(save, 300);
+    });
+    refresh.addEventListener('click', load);
+    // Stream Deck llama a esta función al abrir el inspector.
+    window.connectElgatoStreamDeckSocket = (port, inspectorUuid, registerEvent, _info, actionInfo) => {
+      uuid = inspectorUuid;
+      try { const data = JSON.parse(actionInfo); action = data.action; settings = data.payload?.settings || {}; } catch { settings = {}; }
+      labelField.value = typeof settings.label === 'string' ? settings.label.slice(0, 40) : '';
+      socket = new WebSocket(`ws://127.0.0.1:${port}`);
+      socket.addEventListener('open', () => {
+        send({ event: registerEvent, uuid }); load();
+        // Teclas configuradas antes de esta versión (o con otro dibujo): se dibujan al abrir el inspector.
+        void ready.then(() => { if (settings.playlistId && settings.imageVersion !== imageVersion) save(); else render(); });
+      });
+      socket.addEventListener('message', event => {
+        let message; try { message = JSON.parse(event.data); } catch { return; }
+        if (message.event === 'sendToPropertyInspector') show(message.payload);
+        else if (message.event === 'didReceiveSettings') settings = message.payload?.settings || {};
+      });
+    };
+  </script>
+</body>
+</html>

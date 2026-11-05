@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <title>El Music</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main aria-live="polite">
+    <p class="brand">EL MUSIC</p>
+    <h1 id="heading">Preparing your music</h1>
+    <p id="description">Setting up secure playback. This may take a moment on the first launch.</p>
+    <div id="loading" class="progress" role="progressbar" aria-label="Preparing playback"></div>
+    <dl id="info" hidden></dl>
+    <div id="actions" hidden>
+      <button id="copy">Copy diagnostics</button>
+      <button id="data" class="secondary">Open data folder</button>
+    </div>
+    <section id="appearance-settings" hidden aria-labelledby="appearance-heading">
+      <h2 id="appearance-heading">Appearance</h2>
+      <label for="artist-color">Artist name color</label>
+      <div class="color-row">
+        <input id="artist-color" type="color" aria-describedby="artist-color-help">
+        <button id="reset-artist-color" class="secondary">Reset to default</button>
+      </div>
+      <p id="artist-color-help">Used for artist names in the player, lists and Related music.</p>
+    </section>
+    <section id="recommendation-settings" hidden aria-labelledby="recommendation-heading">
+      <h2 id="recommendation-heading">Recommendations</h2>
+      <p id="lastfm-status" role="status"></p>
+      <label for="lastfm-key">Last.fm API key</label>
+      <input id="lastfm-key" type="password" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="lastfm-help">
+      <p id="lastfm-help">Add Last.fm as another recommendation source. ListenBrainz also works without a key.</p>
+      <ol id="lastfm-steps" class="lastfm-steps">
+        <li>Choose Get a free API key and sign in to Last.fm, or create an account.</li>
+        <li>Create an API account for your personal app. You can name it El Music.</li>
+        <li>Copy the API key, paste it above and choose Save API key. The shared secret is not needed.</li>
+      </ol>
+      <div class="settings-actions">
+        <button id="save-lastfm" disabled>Save API key</button>
+        <button id="change-lastfm" hidden>Change API key</button>
+        <button id="cancel-lastfm" class="secondary" hidden>Cancel</button>
+        <button id="clear-lastfm" class="secondary">Remove saved key</button>
+        <button id="get-lastfm" class="secondary">Get a free API key</button>
+      </div>
+    </section>
+    <p id="feedback" role="status"></p>
+    <div id="settings-done" hidden><button id="done-settings" class="secondary">Done</button></div>
+    <p class="footer">Your music, through the official Apple Music web player.</p>
+  </main>
+  <script src="page.js"></script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+/* La barra conserva los controles y listeners del reproductor oficial. */
+html.el-music-shell { --el-toolbar-height: 54px; --el-nav-height: 0px; --el-controls-left: 66px; --el-controls-right: 150px; --el-lcd-safe: 398px; }
+html.el-music-shell[data-el-music-platform=mac] { --el-controls-left: 144px; --el-controls-right: 12px; --el-lcd-safe: 476px; }
+html.el-music-shell .app-container { padding-top: var(--el-toolbar-height); box-sizing: border-box; }
+html.el-music-shell .player-bar {
+  position: fixed !important; inset: 0 0 auto !important; width: 100% !important;
+  height: var(--el-toolbar-height) !important; margin: 0 !important; padding: 0 !important;
+  z-index: 100 !important; background: #202020 !important; border-bottom: 1px solid rgba(235,235,245,.19);
+  -webkit-app-region: drag;
+  color-scheme: dark; opacity: 1 !important; color: #ededed !important;
+  --systemPrimary: #ededed; --systemSecondary: #bcbcbc; --systemPrimary-onLight: #ededed;
+  --systemPrimary-vibrant: #d8d8d8; --systemSecondary-onLight: #bcbcbc; --keyColor: #fa2d48;
+}
+/* Windows combina las regiones drag de todas las vistas: sin este hueco la barra Apple tapaba el botón de menú local (0–60 px). */
+html.el-music-shell:not([data-el-music-platform=mac])::after {
+  content: ''; position: fixed; left: 0; top: 0; width: 60px; height: var(--el-toolbar-height);
+  pointer-events: none; -webkit-app-region: no-drag;
+}
+html.el-music-shell .player-bar > .wrapper { width: 100% !important; max-width: none !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }
+html.el-music-shell .chrome-player {
+  display: flex !important; justify-content: space-between; gap: 32px;
+  align-items: center !important; width: 100% !important; max-width: none !important;
+  height: 100% !important; margin: 0 !important; padding: 0 var(--el-controls-right) 0 var(--el-controls-left) !important;
+  box-sizing: border-box;
+  border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #202020 !important;
+}
+html.el-music-shell .chrome-player__playback-controls,
+html.el-music-shell .chrome-player__actions { flex-shrink: 0; -webkit-app-region: no-drag; }
+html.el-music-shell .chrome-player__playback-controls { display: flex; align-items: center; gap: 12px; }
+html.el-music-shell .chrome-player__lcd { position: relative; flex: 1; width: calc(100% - 500px) !important; max-width: 450px; min-width: 0; padding: 0 !important; } /* relative acá (la regla ancha de abajo lo vuelve absolute y centrado); el aviso #el-music-lcd-pending se apoya en cualquiera de los dos */
+html.el-music-shell .chrome-player .playback-controls { align-items: center; gap: 0; --shuffle-repeat-button-width: 32px; --shuffle-repeat-button-height: 32px; --skip-icon-width: 26px; --playback-control-button-width: 32px; --playback-control-button-height: 32px; }
+html.el-music-shell .chrome-player .playback-controls__main { align-items: center; gap: 0; --playback-control-icon-width: 26px; --playback-control-icon-height: 26px; }
+/* Glyph rectangular sobre el botón original: conserva listeners, switch y disabled. */
+html.el-music-shell amp-playback-controls-repeat { position: relative; }
+html.el-music-shell amp-playback-controls-repeat[data-el-music-repeat-active] { --playback-control-icon-width: 0px; --shuffle-repeat-icon-height: 0px; }
+html.el-music-shell amp-playback-controls-repeat[data-el-music-repeat-active]::before { content: ''; position: absolute; inset: 3px; background: #202020; pointer-events: none; }
+html.el-music-shell amp-playback-controls-repeat[data-el-music-repeat-active]::after { content: ''; position: absolute; width: 18px; height: 18px; left: 7px; top: 7px; background: #d8d8d8; pointer-events: none; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M2.25 8.25V4.25H15.75V13.75H8.25M5.5 13.75H2.25V11M10.5 11.25L8 13.75L10.5 16.25' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
+html.el-music-shell amp-playback-controls-repeat[data-el-music-repeat-active=true]::after { background: #fa2d48; }
+html.el-music-shell amp-playback-controls-repeat[data-el-music-repeat-one=true]::before { content: '1'; color: #fa2d48; display: grid; place-items: center; font: 8px/1 'Segoe UI',sans-serif; }
+html.el-music-shell amp-playback-controls-repeat[data-el-music-repeat-disabled=true]::after { opacity: .4; }
+html.el-music-shell .chrome-player .action-buttons { display: flex !important; align-items: center; gap: 14px !important; flex-direction: row; --player-action-button-width: 24px; margin: 0; }
+html.el-music-shell .chrome-player .action-buttons > * { order: 2; }
+html.el-music-shell .chrome-player .action-buttons > .chrome-volume { order: 0; }
+html.el-music-shell .chrome-player .action-buttons > :is(.lyrics__button-container,.el-music-lyrics-placeholder) { order: 1; }
+html.el-music-shell .chrome-player :is(.el-music-lyrics-placeholder,.lyrics__button[data-testid="lyrics-button"]) { width: 24px; height: 24px; flex-shrink: 0; position: relative; }
+html.el-music-shell .chrome-player .el-music-lyrics-placeholder { display: grid; place-items: center; border: 0; padding: 0; color: #d8d8d8; background: transparent; opacity: .4; }
+html.el-music-shell .chrome-player .el-music-lyrics-placeholder svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+html.el-music-shell .chrome-player .lyrics__button[data-testid="lyrics-button"] :is(svg,.invertible-mask) { visibility: hidden; }
+html.el-music-shell .chrome-player .lyrics__button[data-testid="lyrics-button"]::after { content: ''; position: absolute; inset: 2px; pointer-events: none; background: #d8d8d8; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 4h16v12H10l-5 4v-4H4V4Zm4 4h2m4 0h2M8 11h2m4 0h2' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
+html.el-music-shell .chrome-player .lyrics__button[data-testid="lyrics-button"][aria-expanded=true]::after { background: #fa2d48; }
+html.el-music-shell .chrome-player .chrome-volume { position: relative; width: 24px; height: 24px; }
+html.el-music-shell .chrome-player .chrome-volume__icon { width: 16px; height: 16px; }
+html.el-music-shell .chrome-player .chrome-volume__slider { top: 30px !important; bottom: auto !important; --progress-track-height: 4px; --progress-thumb-width: 14px; --progress-thumb-height: 14px; --progress-thumb-color: #a5a8ba; }
+html.el-music-shell .chrome-player .player-lcd { height: 44px !important; padding-top: 0 !important; grid-template-rows: 40px 4px; background: #2b2b2b !important; border-radius: 8px; overflow: hidden; }
+html.el-music-shell .chrome-player .player-lcd__artwork { width: 38px; height: 38px; margin-left: 3px; border-radius: 4px; }
+html.el-music-shell .chrome-player .player-lcd__metadata { --lcd-justify-text: center; }
+html.el-music-shell .chrome-player .player-lcd :is(.marquee-line__text-content,button),
+html.el-music-shell .player-lcd--empty::after { font-family: 'Pretendard Variable',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif !important; }
+html.el-music-shell .chrome-player .marquee--primary { font-size: 12px; font-weight: 500; }
+html.el-music-shell .chrome-player .marquee--secondary { font-size: 11px; color: #a9a9ae; }
+/* LCD en dos filas (music-shell.js, renderLcdLine): canción arriba y «by Artista from Álbum»
+   abajo, de 4 a 32 px del borde del LCD; la franja de progreso baja 4 px (pista a 36 px): 4 px arriba del texto y 4 px
+   hasta la pista. Los textos de Apple quedan invisibles en su lugar. Se recorta con «…» primero el álbum y después el
+   artista; la canción tiene su fila entera. Con un Play esperando, las mismas filas y «…» en lo que falta. */
+html.el-music-shell .chrome-player .player-lcd__metadata { position: relative; }
+html.el-music-shell .chrome-player .player-lcd__progress { transform: translateY(4px); }
+html.el-music-shell.el-music-lcd-rows .chrome-player .player-lcd__metadata [data-testid="lcd-metadata"] { visibility: hidden; }
+/* La barra de progreso de Apple queda en una capa por encima de la columna de textos: las filas suben de capa y sólo sus
+   botones reciben el clic; en el espacio libre entre palabras el clic sigue llegando a la barra. */
+html.el-music-shell.el-music-lcd-rows .chrome-player .player-lcd__metadata { z-index: 4; pointer-events: none; }
+html.el-music-shell #el-music-lcd-line { pointer-events: none; }
+/* LCD vacío de Apple («No Song Playing») con un Play esperando: sólo se ven nuestras filas. */
+html.el-music-shell.el-music-lcd-rows .chrome-player .player-lcd--empty::after { visibility: hidden; }
+html.el-music-shell #el-music-lcd-line button { pointer-events: auto; }
+html.el-music-shell #el-music-lcd-line { position: absolute; left: 0; right: 0; top: 4.5px; height: 28px; z-index: 2; display: grid; grid-template-rows: 14px 14px; justify-items: center; min-width: 0; white-space: nowrap; font-family: 'Pretendard Variable',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+/* Sin tema en el LCD (primer Play de la sesión): las filas van sobre el LCD vacío, a la derecha de la portada. */
+html.el-music-shell #el-music-lcd-line.el-music-lcd-line--free { top: 4px; left: 49px; right: 49px; }
+html.el-music-shell #el-music-lcd-line[hidden] { display: none; }
+html.el-music-shell #el-music-lcd-line button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; -webkit-app-region: no-drag; }
+html.el-music-shell #el-music-lcd-line button:focus-visible { outline: 2px solid #fa2d48; outline-offset: 1px; border-radius: 3px; }
+html.el-music-shell .el-music-lcd-line__top, html.el-music-shell .el-music-lcd-line__bottom { display: flex; align-items: center; max-width: 100%; min-width: 0; line-height: 14px; overflow: hidden; }
+html.el-music-shell .el-music-lcd-line__top { font-size: 12px; font-weight: 600; color: #ededed; }
+html.el-music-shell .el-music-lcd-line__bottom { font-size: 11px; color: #a9a9ae; }
+html.el-music-shell .el-music-lcd-line__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.el-music-shell .el-music-lcd-line__title:hover { text-decoration: underline; text-underline-offset: 2px; }
+html.el-music-shell .el-music-lcd-line__word { flex: none; margin-right: 4px; color: #7d7d82; }
+html.el-music-shell .el-music-lcd-line__artists + .el-music-lcd-line__word { margin-left: 8px; }
+html.el-music-shell .el-music-lcd-line__artists { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--el-music-artist-color,#b48cff); }
+html.el-music-shell .el-music-lcd-line__artists :is(.el-music-lcd-line__artist, .el-music-lcd-line__artist:is(button)) { color: var(--el-music-artist-color,#b48cff) !important; }
+html.el-music-shell .el-music-lcd-line__artists .el-music-lcd-line__plain { color: #a9a9ae; }
+html.el-music-shell .el-music-lcd-line__artists button:hover { color: #fa2d48 !important; }
+html.el-music-shell .el-music-lcd-line__album { flex: 0 4 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d0d0d4 !important; }
+html.el-music-shell button.el-music-lcd-line__album:hover { color: #fa2d48 !important; }
+html.el-music-shell .el-music-lcd-line__missing { flex: none; color: #6e6e73; letter-spacing: 1px; }
+/* Nombre de artista: color propio configurable (Settings), en el LCD, en los enlaces de artista de Apple y en Related. */
+html.el-music-shell .chrome-player [data-el-music-artist],
+html.el-music-shell .chrome-player [data-el-music-artist] *,
+html.el-music-shell a[href*="/artist/"]:not([href*="see-all"]):not(:has(svg,img,picture,amp-icon)),
+html.el-music-shell a[href*="/artist/"]:not([href*="see-all"]) :is(span,p,h1,h2,h3,h4):not(:has(svg,img,picture,amp-icon)) { color: var(--el-music-artist-color,#b48cff) !important; }
+html.el-music-shell .chrome-player .volume-control { width: 100%; height: 24px; position: relative; align-self: center; }
+html.el-music-shell .chrome-player .volume-control::after { content: ''; width: 14px; height: 14px; position: absolute; top: 5px; left: calc((100% - 14px) * var(--el-volume-fraction,0)); border-radius: 50%; background: #a5a8ba; pointer-events: none; }
+html.el-music-shell .chrome-player .volume-control__range { --progress-track-bg-height: 4px; --progress-thumb-offset: -5px; --thumb-opacity: 1; --progress-thumb-multiplier-active: 1; }
+html.el-music-shell .chrome-player .volume-control__range::-webkit-slider-thumb { width: 14px !important; height: 14px !important; opacity: 0 !important; transform: translateY(-5px); }
+html.el-music-shell .chrome-player .volume-control__range::-webkit-slider-runnable-track { mask: none; border-radius: 4px; }
+html.el-music-shell .chrome-player :is(button,input,a,.player-lcd__progress) { -webkit-app-region: no-drag; }
+@media (min-width: 1200px) {
+  html.el-music-shell .chrome-player__lcd { position: absolute; left: 50%; transform: translateX(-50%); width: min(40%, calc(100% - var(--el-lcd-safe) - var(--el-lcd-safe))) !important; max-width: none; }
+}
+@media (min-width: 1101px) {
+  html.el-music-shell .chrome-player .chrome-volume { display: flex; align-items: center; gap: 6px; width: 100px; }
+  html.el-music-shell .chrome-player .chrome-volume__button { flex: 0 0 16px; }
+  html.el-music-shell .chrome-player .chrome-volume > .chrome-volume__button { order: -1; }
+  html.el-music-shell .chrome-player .chrome-volume__slider { position: static !important; width: 78px; height: 24px; padding: 0; border-radius: 0; background: transparent !important; backdrop-filter: none !important; opacity: 1; transform: none; pointer-events: auto; transition: none; }
+}
+/* Los tiempos quedan junto a la pista, sin cubrir ni desenfocar la canción. */
+html.el-music-shell .chrome-player .player-lcd--expanded-progress :is(.player-lcd__artwork,.player-lcd__metadata,.player-lcd__after-metadata) { opacity: 1 !important; }
+html.el-music-shell .chrome-player .player-lcd .progress-container::before { content: none !important; }
+html.el-music-shell .chrome-player .player-lcd .player-lcd__progress { padding-block: 0 !important; }
+/* La fila de progreso mide 4px y el LCD recorta: la franja con tiempos se superpone abajo, a la derecha de la portada,
+   siempre visible (Apple sólo muestra los tiempos en hover); el hover sólo engrosa la pista. La metadata sube lo justo. */
+html.el-music-shell .chrome-player .player-lcd :is(.progress--compact,.progress--expanded) {
+  position: absolute !important; left: 44px; right: 8px; bottom: 1px !important; width: auto !important; margin: 0 !important;
+  --progress-bar-grid-template-areas: "elapsed scrubber remaining";
+  --progress-bar-grid-template-columns: 34px minmax(0,1fr) 34px;
+  --progress-bar-grid-template-rows: 14px;
+  --progress-bar-grid-row-gap: 0; --progress-bar-grid-column-gap: 6px;
+  --progress-track-height: 2px; --progress-time: #a9a9ae;
+}
+html.el-music-shell .chrome-player .player-lcd .progress--expanded { --progress-track-height: 4px; --progress-time: #d8d8dc; }
+html.el-music-shell .chrome-player .player-lcd:not(.player-lcd--empty):not(.player-lcd--no-progress) .player-lcd__metadata { transform: translateY(-6px); }
+/* Listas de canciones: encabezados ordenables y columna Label (cargada en segundo plano). */
+/* Encabezado siempre a la vista: queda fijo arriba al bajar, para saber qué columna es cada una
+   y poder redimensionar o reordenar desde cualquier altura; fondo de la página para que las filas no se vean por detrás, y
+   texto un poco más blanco que el gris secundario de Apple (el hover sigue en el blanco de systemPrimary). */
+html.el-music-shell .songs-list > .songs-list__header { position: sticky; top: 0; z-index: 3; background: var(--pageBG, #1f1f1f); }
+/* La línea de pie va en las celdas (una fila de tabla no dibuja sombra): marca dónde termina el encabezado sobre las filas. */
+html.el-music-shell .songs-list > .songs-list__header > * { box-shadow: inset 0 -1px 0 #ffffff24; }
+html.el-music-shell .songs-list__header :is(.songs-list__header-col, [data-el-music-col]),
+html.el-music-shell .songs-list__header :is(.songs-list__header-col, [data-el-music-col]) > * { color: #d4d4d4; }
+html.el-music-shell .songs-list__header [data-el-music-sort-key] { cursor: pointer; user-select: none; }
+html.el-music-shell .songs-list__header [data-el-music-sort-key]:hover > * { color: var(--systemPrimary); }
+html.el-music-shell .songs-list__header [data-el-music-sort-direction=asc] > *::after { content: ' ▲'; font-size: .8em; }
+html.el-music-shell .songs-list__header [data-el-music-sort-direction=desc] > *::after { content: ' ▼'; font-size: .8em; }
+html.el-music-shell .songs-list__header .el-music-col--label { width: 16%; }
+html.el-music-shell .songs-list__header .el-music-col--released { width: 104px; }
+/* Portada siempre a la izquierda: columna fija; el ancho real lo fija el script según la grilla de Apple. */
+html.el-music-shell .songs-list__header .el-music-col--artwork { width: 60px; }
+html.el-music-shell .songs-list .el-music-col--artwork { display: table-cell; }
+html.el-music-shell .songs-list-row .el-music-album-link { color: inherit; text-decoration: none; }
+html.el-music-shell .songs-list-row .el-music-album-link:hover { text-decoration: underline; }
+html.el-music-shell .songs-list-row .el-music-artist-link { text-decoration: none; }
+html.el-music-shell .songs-list-row .el-music-artist-link:hover { text-decoration: underline; }
+html.el-music-shell .songs-list-row .el-music-col--artwork { vertical-align: middle; }
+html.el-music-shell .songs-list-row .songs-list__col--song > .songs-list-row__song-wrapper { margin-inline-start: 3px; }
+html.el-music-shell .songs-list__header .el-music-col--genre { width: 120px; }
+html.el-music-shell .songs-list-row .el-music-col { color: var(--systemSecondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline-end: 16px; }
+html.el-music-shell .songs-list-row .el-music-col--released { font-variant-numeric: tabular-nums; }
+html.el-music-shell .songs-list-row .el-music-col--pending::before { content: '…'; opacity: .45; }
+/* Lista larga más liviana: cada portada que termina de cargar dispara un
+   listener de Apple que fuerza el diseño de la tabla entera, unos 45 ms con 400 filas. El contenido de las celdas fuera de
+   la vista no se diseña (content-visibility); con eso baja a unos 30 ms, menos que Apple sola (QA 0.1.48). No va en la
+   celda ★ (su estrella se dibuja fuera de la caja) ni en toda la celda de portada, cuyo número de fila («100») desborda su
+   casilla y quedaría cortado: ahí sólo la caja de la imagen y su botón Play (40×40). auto recuerda el tamaño real. */
+html.el-music-shell .songs-list-row > :not(.songs-list__col--favorite-or-popular):not(.el-music-col--artwork) > *,
+html.el-music-shell .songs-list-row > .el-music-col--artwork .songs-list-row__song-index { content-visibility: auto; contain-intrinsic-size: auto 40px; }
+/* Columnas configurables: ocultas, borde para redimensionar, arrastre y menú. */
+html.el-music-shell .songs-list :is(.songs-list__col,.songs-list__header-col,.el-music-col).el-music-col--hidden { display: none !important; }
+html.el-music-shell .songs-list__header [data-el-music-col] { position: relative; }
+/* Asa de 16 px centrada sobre el divisor que dibuja Apple (el ::before del encabezado siguiente, 15 px a la izquierda de su
+   celda = 15 px antes del borde derecho de ésta). Sin línea propia: antes había dos. El gesto se
+   detecta además por coordenadas (8 px a cada lado del divisor); la asa aporta el cursor y una marca al pasar el mouse. */
+html.el-music-shell .songs-list__header .el-music-col-resize { position: absolute; top: 0; bottom: 0; inset-inline-end: 7px; width: 16px; cursor: col-resize; z-index: 2; border-radius: 3px; }
+html.el-music-shell .songs-list__header .el-music-col-resize:hover { background: #ffffff14; }
+/* La última columna visible lleva el botón ⚙ en ese mismo lugar y su borde es el de la tabla: sin asa. */
+html.el-music-shell .songs-list__header [data-el-music-col]:has(> .el-music-columns-button) .el-music-col-resize { display: none; }
+html.el-music-shell .el-music-header--dragging, html.el-music-shell .el-music-header--dragging * { cursor: grabbing !important; user-select: none; }
+html.el-music-shell .el-music-header--resizing, html.el-music-shell .el-music-header--resizing * { cursor: col-resize !important; user-select: none; }
+html.el-music-shell .songs-list__header .el-music-col--active > * { opacity: .5; }
+html.el-music-shell .songs-list__header [data-el-music-drop]::before { content: '' !important; position: absolute !important; top: 2px !important; bottom: 4px !important; width: 2px !important; height: auto !important; background: var(--keyColor, #fa2d48) !important; border-radius: 1px; transform: none !important; inset-inline-start: 0 !important; }
+html.el-music-shell .songs-list__header [data-el-music-drop=after]::before { inset-inline-start: auto !important; inset-inline-end: 0 !important; }
+/* Línea guía de la redimensión: fija, a la altura de toda la ventana, con el ancho pendiente al lado. */
+.el-music-col-guide { position: fixed; left: 0; top: 0; bottom: 0; width: 1px; z-index: 2147483000; background: var(--keyColor, #fa2d48); pointer-events: none; }
+.el-music-col-guide::after { content: attr(data-width); position: absolute; top: 48px; left: 6px; padding: 2px 6px; border-radius: 4px; background: #3b3b3f; color: #f5f5f7; font: 600 11px 'Pretendard Variable',system-ui,sans-serif; white-space: nowrap; }
+.el-music-col-ghost { position: fixed; left: 0; top: 0; z-index: 2147483000; padding: 4px 10px; border-radius: 6px; background: #3b3b3f; color: #f5f5f7; font: 600 12px 'Pretendard Variable',system-ui,sans-serif; box-shadow: 0 4px 14px #0008; pointer-events: none; }
+html.el-music-shell .songs-list__header .el-music-columns-button { position: absolute; inset-inline-end: 0; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--systemSecondary); font-size: 14px; line-height: 22px; cursor: pointer; opacity: .55; }
+html.el-music-shell .songs-list__header:hover .el-music-columns-button, html.el-music-shell .songs-list__header .el-music-columns-button:focus-visible { opacity: 1; }
+html.el-music-shell .songs-list__header .el-music-columns-button:hover { background: #ffffff14; color: var(--systemPrimary); }
+#el-music-columns-menu { position: fixed; z-index: 2147483001; min-width: 160px; padding: 6px 0; border: 1px solid #ffffff1f; border-radius: 8px; background: #2b2b2ef8; box-shadow: 0 10px 30px #0008; color: #f5f5f7; font: 13px 'Pretendard Variable',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color-scheme: dark; }
+#el-music-columns-menu .el-music-columns-menu__title { padding: 4px 14px 6px; color: #a1a1a6; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+#el-music-columns-menu label { display: flex; align-items: center; gap: 8px; padding: 5px 14px; cursor: pointer; }
+#el-music-columns-menu label:hover { background: #ffffff14; }
+#el-music-columns-menu input { margin: 0; accent-color: #fa2d48; }
+#el-music-columns-menu button { display: block; width: calc(100% - 20px); margin: 6px 10px 2px; padding: 6px 10px; border: 1px solid #515151; border-radius: 6px; background: #303030; color: #ededed; font: inherit; cursor: pointer; }
+#el-music-columns-menu button:hover { background: #414141; }
+/* Lista completa de discos de un sello (panel propio y página de Apple). */
+#el-music-label-releases { padding: 8px var(--bodyGutter, 40px) 48px; color: #f5f5f7; font: 14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+#el-music-label-releases h2, #el-music-label-panel h2 { margin: 24px 0 4px; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+#el-music-label-releases p { margin: 0 0 10px; color: #a1a1a6; }
+#el-music-label-releases .el-music-label-status { color: #d3d3d7; font-size: 13px; }
+.el-music-year { color: inherit; opacity: .8; }
+.el-music-releases { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.el-music-releases th, .el-music-releases td { padding: 7px 10px; text-align: left; border-bottom: .5px solid var(--labelDivider, #ffffff1f); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.el-music-releases th { color: var(--systemSecondary, #a1a1a6); font-weight: 600; cursor: pointer; user-select: none; }
+.el-music-releases th:first-child, .el-music-releases td:first-child { width: 52px; padding-inline: 4px 8px; color: var(--systemSecondary, #a1a1a6); text-align: right; cursor: default; font-variant-numeric: tabular-nums; }
+.el-music-releases th[data-key=released], .el-music-releases td[data-key=released] { width: 110px; font-variant-numeric: tabular-nums; }
+.el-music-releases th[data-key=genre], .el-music-releases td[data-key=genre] { width: 160px; }
+.el-music-releases th[data-key]:hover { color: var(--systemPrimary, #f5f5f7); }
+.el-music-releases th[data-direction=asc]::after { content: ' ▲'; font-size: .8em; }
+.el-music-releases th[data-direction=desc]::after { content: ' ▼'; font-size: .8em; }
+.el-music-releases td[data-key=artist] { color: var(--el-music-artist-color, #b48cff); }
+.el-music-releases td a { color: inherit; text-decoration: none; }
+.el-music-releases tr:hover td { background: #ffffff0a; }
+/* ▶ al pasar el mouse: reemplaza el número de la fila. */
+.el-music-releases .el-music-releases-play { display: none; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 11px; background: transparent; color: var(--systemPrimary, #f5f5f7); cursor: pointer; align-items: center; justify-content: center; }
+/* Triángulo dibujado (no el glifo ▶, que la fuente deja bajo y a la derecha): 8×10 px, corrido 1 px a la derecha para centrarlo ópticamente. */
+.el-music-releases .el-music-releases-play::before { content: ''; display: block; width: 0; height: 0; border-left: 8px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }
+.el-music-releases tbody tr:hover .el-music-releases-index > span, .el-music-releases tbody tr:focus-within .el-music-releases-index > span { display: none; }
+.el-music-releases tbody tr:hover .el-music-releases-play, .el-music-releases tbody tr:focus-within .el-music-releases-play { display: inline-flex; }
+.el-music-releases .el-music-releases-play:hover { background: #ffffff1f; }
+.el-music-releases .el-music-releases-play:disabled { opacity: .5; cursor: default; }
+.el-music-releases td a:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Encabezado ★ de favoritos (ordenable) y pie con cantidad y duración. */
+/* Misma ubicación que la estrella de Apple en cada fila (.favorite-or-popular: 33 px a la izquierda, 26 px de ancho). */
+html.el-music-shell .songs-list__header .el-music-favorite-header { position: absolute; inset-inline-start: -33px; top: 50%; transform: translateY(-50%);
+  min-width: 26px; text-align: center; white-space: nowrap; color: var(--systemSecondary); font-size: 12px; }
+html.el-music-shell .songs-list__header [data-el-music-sort-direction=asc] > .el-music-favorite-header,
+html.el-music-shell .songs-list__header [data-el-music-sort-direction=desc] > .el-music-favorite-header { color: var(--keyColor, #fa2d48); }
+html.el-music-shell .el-music-list-summary { padding: 14px 0 6px; color: var(--systemSecondary); font-size: 12px; font-weight: 600; }
+/* Carga automática de todas las tandas: el marcador de Apple queda fijo dentro de la ventana e invisible. */
+html.el-music-autoload .infinite-scroll-spinner { position: fixed !important; top: 50% !important; left: 50% !important; width: 1px !important; height: 1px !important;
+  min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; opacity: 0 !important; pointer-events: none !important; }
+/* Respaldo si Apple vuelve a poner el tema antes del observador: fondo neutro en lugar del color de la portada. */
+html.el-music-shell .app-container.has-theme-override { --joe-color: var(--pageBG, #1f1f1f) !important; }
+/* Carteles de Apple (dialog.error y demás): en modo oscuro el botón principal toma el fondo de --keyColorBG (#fff) y deja el texto
+   en #fff, así que el botón queda blanco y sin texto. El texto pasa al color de fondo de la página, como en los otros carteles de Apple. */
+html.el-music-shell dialog .button.alert:not(.alert-secondary) { --buttonTextColor: var(--pageBG, #1f1f1f); }
+/* Aviso de Stream Deck (agregar a playlist): abajo al centro, se desvanece solo. */
+.el-music-toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 2147483000; max-width: min(480px, calc(100vw - 48px)); padding: 12px 18px;
+  border: 1px solid #ffffff1f; border-radius: 10px; background: #2b2b2ef2; box-shadow: 0 10px 30px #0008; color: #f5f5f7; pointer-events: none;
+  font: 500 13px/1.4 'Pretendard Variable',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; text-align: center; opacity: 1; transition: opacity .8s ease; }
+.el-music-toast > div { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.el-music-toast .el-music-toast__detail { margin-top: 2px; color: #b9b9be; font-weight: 400; }
+.el-music-toast--hide { opacity: 0; }
+/* Aviso de trabajo en curso (0.1.55): el anillo gira a la izquierda del título mientras main resuelve el pegado. */
+.el-music-toast .el-music-toast__spinner { display: inline-block; width: 10px; height: 10px; margin: 0 8px 1px 0; vertical-align: middle; border: 2px solid #f5f5f7; border-right-color: transparent;
+  border-radius: 50%; animation: el-music-spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .el-music-toast { transition: none; } .el-music-toast .el-music-toast__spinner { animation-duration: 2.4s; } }
+/* Descarga de una actualización: abajo a la derecha, para convivir con los avisos del centro mientras se sigue escuchando. */
+.el-music-toast.el-music-toast--update { left: auto; right: 24px; bottom: 24px; transform: none; max-width: min(420px, calc(100vw - 48px)); text-align: left; }
+/* Línea de carga: 2 px arriba de la vista musical, del rojo de Apple Music, con un tramo que corre mientras se espera la página
+   nueva. Aparece a los 120 ms (una navegación instantánea no parpadea) y el cursor pasa a «progreso». */
+#el-music-busy { position: fixed; left: 0; right: 0; top: 0; height: 2px; z-index: 2147483001; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .2s ease; }
+#el-music-busy.el-music-busy--on { opacity: 1; transition: opacity .15s ease .12s; }
+#el-music-busy::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 38%; background: linear-gradient(90deg, #fa2d4800, #fa2d48 30%, #ff5c74 70%, #fa2d4800);
+  transform: translateX(-100%); }
+/* Delay negativo: el tramo ya está entrando cuando la línea aparece (sin él, los primeros ~300 ms corre fuera de la vista). */
+#el-music-busy.el-music-busy--on::before { animation: el-music-busy-run 1.1s cubic-bezier(.45,.05,.55,.95) -.3s infinite; }
+@keyframes el-music-busy-run { from { transform: translateX(-100%); } to { transform: translateX(265%); } }
+html.el-music-busy, html.el-music-busy body, html.el-music-busy :is(a, button, [role="button"]) { cursor: progress !important; }
+@media (prefers-reduced-motion: reduce) { #el-music-busy::before { width: 100%; transform: none; background: #fa2d48; } #el-music-busy.el-music-busy--on::before { animation: el-music-busy-pulse 1.6s ease-in-out infinite; } }
+@keyframes el-music-busy-pulse { 50% { opacity: .35; } }
+html.el-music-shell .player-lcd--empty > amp-icon { visibility: hidden; }
+html.el-music-shell .player-lcd--empty::after { content: 'No Song Playing'; color: #ededed; position: absolute; inset: 0; display: flex; justify-content: center; padding-top: 8px; pointer-events: none; font: 500 12px/14px system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+html.el-music-shell .player-lcd--empty::before { content: ''; position: absolute; bottom: 0; left: 44px; right: 44px; height: 2px; background: #535353; pointer-events: none; }
+.el-music-navigation {
+  position: relative; height: 54px; display: flex; align-items: center; gap: 4px; padding: 0; margin-right: 12px; flex-shrink: 0; /* primera en los controles; el margen es el espacio antes de los de Apple */
+  color: #d8d8d8; z-index: 101; -webkit-app-region: no-drag; font: 12px 'Pretendard Variable',system-ui,sans-serif;
+}
+.el-music-navigation button { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 30px; padding: 0; color: #d8d8d8; background: transparent; border: 0; border-radius: 4px; cursor: pointer; }
+.el-music-navigation button:hover { color: #fff; background: #303030; }
+.el-music-navigation button:active { background: #414141; }
+.el-music-navigation button.el-music-text-button { width: 24px; padding: 0; }
+.el-music-navigation button.el-music-text-button:disabled { cursor: default; opacity: .5; }
+.el-music-navigation button:focus-visible, .el-music-navigation a:focus-visible { outline: 2px solid #fa586a; outline-offset: 2px; }
+.el-music-navigation svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.el-music-brand { font: 600 22px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: var(--systemPrimary); }
+html.el-music-shell .el-music-content { padding-top: var(--el-nav-height) !important; }
+.el-music-partial { color: #bcbcbc; font-size: 11px; }
+
+html.el-music-shell .chrome-player::before, html.el-music-shell .chrome-player::after { display: none !important; }
+/* El drawer oficial mide 300px; queda debajo de la barra propia y comparte el área con Related. */
+html.el-music-shell .app-container .side-panel { top: var(--el-toolbar-height) !important; height: calc(100dvh - var(--el-toolbar-height)) !important; }
+html.el-music-shell:has(.chrome-player :is(.lyrics__button[data-testid="lyrics-button"][aria-expanded=true],.up-next-queue__button.active)) #el-music-recommendation-panel { right: 300px; }
+/* Música de un sello (desde la columna Label): grilla de portadas como las de Apple. */
+#el-music-label-panel { position: fixed; inset: calc(var(--el-toolbar-height) + var(--el-nav-height)) 0 0 var(--el-sidebar-width,260px); z-index: 85; overflow: auto; box-sizing: border-box; padding: 24px 40px 40px; background: #1f1f1f; color: #f5f5f7; font: 14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color-scheme: dark; }
+#el-music-label-panel h1 { margin: 20px 0 6px; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -.025em; outline: none; }
+#el-music-label-panel p { color: #a1a1a6; max-width: 75ch; margin: 0 0 18px; }
+#el-music-label-panel .el-music-label-grid { list-style: none; padding: 0; margin: 0 0 18px; display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 24px 20px; }
+#el-music-label-panel .el-music-label-grid a { display: flex; flex-direction: column; gap: 4px; color: #f5f5f7; text-decoration: none; min-width: 0; }
+#el-music-label-panel .el-music-label-art { display: block; aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: #2c2c2e; margin-bottom: 6px; box-shadow: 0 2px 10px #0006; }
+#el-music-label-panel .el-music-label-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#el-music-label-panel .el-music-label-grid strong { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#el-music-label-panel .el-music-label-grid a > span:last-child { color: var(--el-music-artist-color, #a1a1a6); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#el-music-label-panel .el-music-label-grid a:hover strong { text-decoration: underline; }
+#el-music-label-panel button { background: #303030; color: #ededed; border: 1px solid #515151; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+#el-music-label-panel button:hover { background: #414141; }
+/* Play y Shuffle sobre la tapa, abajo a la izquierda como en las tarjetas de Apple: aparecen al pasar el mouse o con foco
+   (y quedan mientras un Play espera). La tapa se oscurece un poco para que los botones se lean sobre cualquier portada. */
+#el-music-label-panel .el-music-label-grid > li { position: relative; min-width: 0; }
+#el-music-label-panel .el-music-label-art { position: relative; }
+#el-music-label-panel .el-music-label-art::after { content: ''; position: absolute; inset: 0; background: #0000; transition: background-color .15s ease; pointer-events: none; }
+#el-music-label-panel .el-music-label-grid > li:hover .el-music-label-art::after, #el-music-label-panel .el-music-label-grid > li:focus-within .el-music-label-art::after { background: #0000002e; }
+#el-music-label-panel .el-music-card-actions { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1; box-sizing: border-box; padding: 10px; display: flex; align-items: flex-end; gap: 8px;
+  pointer-events: none; opacity: 0; transition: opacity .15s ease; }
+#el-music-label-panel .el-music-label-grid > li:hover .el-music-card-actions, #el-music-label-panel .el-music-label-grid > li:focus-within .el-music-card-actions,
+#el-music-label-panel .el-music-card-actions:has(.el-music-pending) { opacity: 1; }
+#el-music-label-panel .el-music-card-actions button { pointer-events: auto; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center;
+  background: #1c1c1ebd; color: #fff; -webkit-backdrop-filter: blur(10px) saturate(1.4); backdrop-filter: blur(10px) saturate(1.4); box-shadow: 0 1px 4px #0006; transition: background-color .12s ease, transform .12s ease; }
+#el-music-label-panel .el-music-card-actions button:hover { background: #fa2d48; }
+#el-music-label-panel .el-music-card-actions button:active { transform: scale(.94); }
+#el-music-label-panel .el-music-card-actions button:disabled { cursor: default; }
+#el-music-label-panel .el-music-card-actions svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+#el-music-label-panel .el-music-card-actions svg[data-filled="true"] { fill: currentColor; stroke: none; }
+#el-music-label-panel .el-music-card-actions button.el-music-pending svg { display: none; }
+#el-music-label-panel .el-music-card-actions button.el-music-pending::before { content: ''; width: 13px; height: 13px; box-sizing: border-box; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: el-music-spin .8s linear infinite; }
+/* Disco que suena: borde rojo en la tapa y Play a la vista. */
+#el-music-label-panel .el-music-label-grid > li.is-playing .el-music-label-art { box-shadow: 0 0 0 2px #fa2d48, 0 2px 10px #0006; }
+#el-music-label-panel .el-music-label-grid > li.is-playing .el-music-card-actions { opacity: 1; }
+#el-music-label-panel .el-music-label-grid > li.is-playing .el-music-card-play { background: #fa2d48; }
+#el-music-label-panel :focus-visible { outline: 2px solid #fa7887; outline-offset: 3px; }
+#el-music-label-panel [hidden] { display: none !important; }
+/* Panel escondido al salir a otra página: invisible y sin tomar clics ni la rueda, pero con su scroll y su disco desplegado
+   intactos, para mostrarlo en el instante en que Back vuelve a su entrada del historial. */
+#el-music-label-panel.el-music-panel--parked { visibility: hidden !important; pointer-events: none !important; }
+/* Disco desplegado arriba del panel (tapa, título, artistas, Play/Shuffle y temas), como la página de un álbum de Apple. */
+#el-music-label-panel .el-music-release { position: relative; overflow: hidden; margin: 10px 0 28px; border-radius: 12px; background: #2a2a2c; box-shadow: 0 1px 0 #ffffff0d inset; }
+#el-music-label-panel .el-music-release__inner { padding: 26px 28px 22px; }
+#el-music-label-panel .el-music-release__head { display: flex; align-items: flex-end; gap: 28px; }
+#el-music-label-panel .el-music-release__cover { flex: 0 0 220px; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #3a3a3c; box-shadow: 0 4px 18px #0008; }
+#el-music-label-panel .el-music-release__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#el-music-label-panel .el-music-release__info { min-width: 0; padding-bottom: 4px; }
+#el-music-label-panel .el-music-release__title { margin: 0 0 4px; font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; color: #f5f5f7; overflow-wrap: anywhere; }
+#el-music-label-panel p.el-music-release__artist { margin: 0 0 6px; font-size: 19px; line-height: 1.25; font-weight: 500; color: #f5f5f7; max-width: none; }
+#el-music-label-panel .el-music-release__artist-link { color: var(--el-music-artist-color, #f5f5f7); text-decoration: none; }
+#el-music-label-panel .el-music-release__artist-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+#el-music-label-panel p.el-music-release__meta { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: #a1a1a6; }
+#el-music-label-panel .el-music-release__actions { display: flex; gap: 10px; margin-top: 18px; }
+#el-music-label-panel .el-music-release__actions button { display: inline-flex; align-items: center; gap: 7px; padding: 7px 22px; border: 0; border-radius: 7px; background: #fa2d48; color: #fff;
+  font: 600 13px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; transition: background-color .12s ease, transform .12s ease; }
+#el-music-label-panel .el-music-release__actions button:hover { background: #ff4a62; }
+#el-music-label-panel .el-music-release__actions button:active { transform: scale(.97); }
+#el-music-label-panel .el-music-release__actions button:disabled { background: #48484a; color: #8e8e93; cursor: default; transform: none; }
+#el-music-label-panel .el-music-release__actions svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+#el-music-label-panel .el-music-release svg[data-filled="true"] { fill: currentColor; stroke: none; }
+#el-music-label-panel .el-music-release__actions button.el-music-pending svg { display: none; }
+#el-music-label-panel .el-music-release__actions button.el-music-pending::before,
+#el-music-label-panel .el-music-release__track-play.el-music-pending::before { content: ''; width: 12px; height: 12px; box-sizing: border-box; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: el-music-spin .8s linear infinite; }
+#el-music-label-panel .el-music-release__close { position: absolute; top: 12px; right: 12px; z-index: 1; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: transparent; color: #a1a1a6; }
+#el-music-label-panel .el-music-release__close:hover { background: #ffffff1a; color: #f5f5f7; }
+#el-music-label-panel .el-music-release__close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+#el-music-label-panel .el-music-release__status { display: flex; align-items: center; gap: 10px; margin: 22px 0 0; color: #d3d3d7; font-size: 13px; }
+#el-music-label-panel .el-music-release__ring { flex: none; width: 10px; height: 10px; border: 2px solid #f5f5f7; border-right-color: transparent; border-radius: 50%; animation: el-music-spin .8s linear infinite; }
+#el-music-label-panel .el-music-release__retry { padding: 4px 10px; font-size: 12px; }
+#el-music-label-panel .el-music-release__tracks { list-style: none; margin: 22px 0 0; padding: 0; }
+#el-music-label-panel .el-music-release__track { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; min-height: 42px; padding: 3px 12px; border-radius: 6px; border-top: 1px solid #ffffff10; }
+#el-music-label-panel .el-music-release__track:first-child, #el-music-label-panel .el-music-release__disc + .el-music-release__track { border-top-color: transparent; }
+#el-music-label-panel .el-music-release__track:hover { background: #ffffff0d; border-top-color: transparent; }
+#el-music-label-panel .el-music-release__track:hover + .el-music-release__track { border-top-color: transparent; }
+#el-music-label-panel .el-music-release__disc { margin: 16px 0 2px; padding: 0 12px; font-size: 13px; font-weight: 600; color: #a1a1a6; }
+#el-music-label-panel .el-music-release__index { position: relative; display: grid; place-items: center; height: 24px; }
+#el-music-label-panel .el-music-release__number { color: #8e8e93; font-size: 14px; font-variant-numeric: tabular-nums; }
+#el-music-label-panel .el-music-release__track-play { position: absolute; inset: 0; margin: auto; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center;
+  background: transparent; color: #f5f5f7; opacity: 0; }
+#el-music-label-panel .el-music-release__track-play:hover { background: transparent; color: #fa2d48; }
+#el-music-label-panel .el-music-release__track-play svg { width: 15px; height: 15px; }
+#el-music-label-panel .el-music-release__track-play.el-music-pending svg { display: none; }
+#el-music-label-panel .el-music-release__track:is(:hover,:focus-within) .el-music-release__track-play,
+#el-music-label-panel .el-music-release__track-play.el-music-pending { opacity: 1; }
+#el-music-label-panel .el-music-release__track:is(:hover,:focus-within,.is-playing) .el-music-release__number,
+#el-music-label-panel .el-music-release__track:has(.el-music-pending) .el-music-release__number { visibility: hidden; }
+#el-music-label-panel .el-music-release__track.is-playing .el-music-release__track-play { opacity: 1; color: #fa2d48; }
+#el-music-label-panel .el-music-release__track.is-playing .el-music-release__song-name { color: #fa2d48; }
+#el-music-label-panel .el-music-release__track.is-unavailable { opacity: .45; }
+#el-music-label-panel .el-music-release__song { min-width: 0; display: flex; flex-direction: column; }
+#el-music-label-panel .el-music-release__song-name { font-size: 14px; color: #f5f5f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#el-music-label-panel .el-music-release__song-artist { font-size: 12px; color: #a1a1a6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#el-music-label-panel .el-music-release__duration { color: #8e8e93; font-size: 13px; font-variant-numeric: tabular-nums; }
+#el-music-label-panel .el-music-release__explicit { display: inline-block; margin-left: 6px; padding: 0 3px; border-radius: 2px; background: #8e8e93; color: #1f1f1f; font-size: 9px; font-weight: 700; line-height: 13px; vertical-align: 2px; letter-spacing: 0; }
+#el-music-label-panel .el-music-release__title .el-music-release__explicit { font-size: 11px; line-height: 15px; vertical-align: 5px; }
+#el-music-label-panel .el-music-release__foot { margin-top: 16px; padding: 0 12px; }
+#el-music-label-panel .el-music-release__foot p { margin: 0; font-size: 12px; line-height: 1.55; color: #8e8e93; }
+@media (max-width: 980px) { #el-music-label-panel .el-music-release__head { flex-direction: column; align-items: flex-start; gap: 18px; } #el-music-label-panel .el-music-release__cover { flex-basis: auto; width: 180px; } }
+@media (prefers-reduced-motion: reduce) { #el-music-label-panel .el-music-release__ring { animation-duration: 2.4s; } }
+/* Estado de la carga: anillo, texto y barra (determinada con el avance; corrida mientras no se conoce el total). */
+#el-music-label-panel .el-music-label-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; color: #d3d3d7; font-size: 13px; margin: 2px 0 20px; }
+#el-music-label-panel .el-music-label-ring { flex: none; width: 10px; height: 10px; border: 2px solid #f5f5f7; border-right-color: transparent; border-radius: 50%; animation: el-music-spin .8s linear infinite; }
+#el-music-label-panel .el-music-label-progress { position: relative; flex: 0 0 100%; max-width: 420px; height: 4px; border-radius: 2px; background: #3a3a3c; overflow: hidden; }
+#el-music-label-panel .el-music-label-progress > span { display: block; height: 100%; width: 0; border-radius: inherit; background: #fa2d48; transition: width .35s ease; }
+#el-music-label-panel .el-music-label-progress--indeterminate > span { position: absolute; left: 0; width: 38% !important; background: linear-gradient(90deg, #fa2d4800, #fa2d48 30%, #ff5c74 70%, #fa2d4800); animation: el-music-busy-run 1.1s cubic-bezier(.45,.05,.55,.95) infinite; }
+@media (prefers-reduced-motion: reduce) { #el-music-label-panel .el-music-label-ring { animation-duration: 2.4s; } #el-music-label-panel .el-music-label-progress--indeterminate > span { width: 100% !important; transform: none; background: #fa2d48; animation: el-music-busy-pulse 1.6s ease-in-out infinite; } }
+/* Sello clickeable en la columna Label. */
+html.el-music-shell .songs-list-row .el-music-label-link { color: inherit; text-decoration: none; }
+html.el-music-shell .songs-list-row .el-music-label-link:hover { color: var(--systemPrimary); text-decoration: underline; text-underline-offset: 3px; }
+/* ▶ del tema que suena, en el margen izquierdo donde Apple pone la estrella de favorito (33 px, 26 px de ancho). */
+html.el-music-shell .songs-list-row:is(.is-playing,.is-loading,.is-paused) .songs-list__col--favorite-or-popular::before { content: '▶'; position: absolute; inset-inline-start: -33px; top: 50%;
+  transform: translateY(-50%); width: 26px; text-align: center; font-size: 11px; color: var(--keyColor, #fa2d48); pointer-events: none; }
+html.el-music-shell .songs-list-row.is-paused .songs-list__col--favorite-or-popular::before { color: var(--systemSecondary); }
+html.el-music-shell .songs-list-row:is(.is-playing,.is-loading,.is-paused):not(:hover) .songs-list__col--favorite-or-popular .favorite-or-popular { visibility: hidden; }
+html.el-music-shell .songs-list-row:is(.is-playing,.is-loading,.is-paused):hover .songs-list__col--favorite-or-popular::before { visibility: hidden; }
+#el-music-recommendation-panel { position: fixed; inset: calc(var(--el-toolbar-height) + var(--el-nav-height)) 0 0 var(--el-sidebar-width,260px); z-index: 86; overflow: auto; box-sizing: border-box; padding: 24px 40px 40px; background: #1f1f1f; color: #f5f5f7; font: 14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color-scheme: dark; container: related / inline-size; }
+#el-music-recommendation-panel .el-music-discovery-header { padding-bottom: 18px; }
+#el-music-recommendation-panel h1 { margin: 20px 0 6px; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -.025em; }
+#el-music-recommendation-panel p { margin: 0; line-height: 1.5; }
+#el-music-recommendation-panel .el-music-recommendation-seed { color: #b6b6bc; font-size: 15px; }
+#el-music-recommendation-panel button { font: inherit; color: inherit; cursor: pointer; }
+#el-music-recommendation-panel button:disabled { cursor: default; }
+#el-music-recommendation-panel .el-music-recommendation-close { padding: 0; border: 0; background: none; color: #fa7887; font-size: 13px; }
+#el-music-recommendation-panel .el-music-recommendation-close::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-left: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); }
+#el-music-recommendation-panel .el-music-recommendation-modes { display: inline-flex; gap: 2px; margin: 20px 0 14px; padding: 3px; border-radius: 7px; background: #303033; }
+#el-music-recommendation-panel .el-music-recommendation-modes button { min-width: 110px; padding: 6px 16px; border: 0; border-radius: 5px; background: transparent; color: #b6b6bc; font-size: 13px; }
+#el-music-recommendation-panel .el-music-recommendation-modes button[aria-pressed=true] { background: #525255; color: #fff; box-shadow: 0 1px 2px #0003; }
+#el-music-recommendation-panel .el-music-recommendation-note { color: #aaaab1; font-size: 12px; }
+#el-music-recommendation-panel .el-music-recommendation-status { margin-top: 7px; color: #d3d3d7; font-size: 13px; min-height: 20px; font-variant-numeric: tabular-nums; }
+#el-music-recommendation-panel [role=alert] { color: #ff9ba6; }
+#el-music-recommendation-panel .el-music-recommendation-list { display: grid; grid-template-columns: minmax(0,1fr); column-gap: 24px; list-style: none; padding: 0; margin: 0; }
+#el-music-recommendation-panel .el-music-recommendation-card { display: grid; grid-template-columns: 56px minmax(0,1fr) auto; align-items: center; gap: 16px; min-width: 0; padding: 14px 12px; border: 0; border-bottom: 1px solid #38383b; border-radius: 0; background: transparent; }
+#el-music-recommendation-panel .el-music-recommendation-card:hover { background: #29292c; }
+#el-music-recommendation-panel .el-music-recommendation-cover { width: 56px; height: 56px; position: relative; overflow: hidden; border-radius: 5px; background: #363639; }
+#el-music-recommendation-panel .el-music-recommendation-cover > span { position: absolute; inset: 17px; background: #aaaab1; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16V5l11-2v11M9 8l11-2M9 16c0 2-5 4-6 2s4-5 6-2m11-2c0 2-5 4-6 2s4-5 6-2' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
+#el-music-recommendation-panel .el-music-recommendation-cover img { display: block; position: relative; width: 100%; height: 100%; object-fit: cover; }
+#el-music-recommendation-panel .el-music-recommendation-metadata { display: grid; grid-template-columns: minmax(0,1fr); row-gap: 3px; min-width: 0; margin: 0; }
+#el-music-recommendation-panel .el-music-recommendation-title { grid-column: 1/-1; width: fit-content; max-width: 100%; padding: 0; border: 0; border-radius: 2px; background: none; color: #f5f5f7; text-align: left; font-size: 15px; font-weight: 600; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#el-music-recommendation-panel .el-music-recommendation-title:hover:not(:disabled) { color: #fa7887; }
+#el-music-recommendation-panel .el-music-recommendation-title:disabled { color: #b6b6bc; }
+#el-music-recommendation-panel .el-music-recommendation-byline { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; }
+#el-music-recommendation-panel .el-music-recommendation-byline > span { color: #aaaab1; }
+#el-music-recommendation-panel .el-music-recommendation-byline a { color: #c9c9cf; text-decoration: none; }
+#el-music-recommendation-panel .el-music-recommendation-byline a[href]:hover { color: #fa7887; text-decoration: underline; text-underline-offset: 3px; }
+#el-music-recommendation-panel :is([data-el-music-part="artist"] a,.el-music-recommendation-seed-artist),
+#el-music-recommendation-panel [data-el-music-part="artist"] a[href]:hover { color: var(--el-music-artist-color,#b48cff) !important; }
+/* Tema en reproducción (coincide con el LCD): fila resaltada, título en acento y barras sobre la portada. */
+#el-music-recommendation-panel .el-music-recommendation-card[aria-current=true] { background: #2a2a2e; box-shadow: inset 3px 0 #fa586a; }
+#el-music-recommendation-panel .el-music-recommendation-card[aria-current=true] .el-music-recommendation-title { color: #fa586a; }
+#el-music-recommendation-panel .el-music-recommendation-card[aria-current=true] .el-music-recommendation-cover::after { content: ''; position: absolute; inset: 0; background:
+  linear-gradient(#fff,#fff) 19px 24px/4px 14px no-repeat, linear-gradient(#fff,#fff) 26px 18px/4px 20px no-repeat, linear-gradient(#fff,#fff) 33px 27px/4px 11px no-repeat, #0000008c; }
+#el-music-recommendation-panel .el-music-recommendation-reason { grid-column: 1/-1; color: #aaaab1; font-size: 11px; line-height: 1.4; }
+#el-music-recommendation-panel .el-music-recommendation-actions { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; margin: 0; min-width: 64px; }
+#el-music-recommendation-panel .el-music-recommendation-play { position: relative; display: inline-block; width: 32px; height: 32px; min-width: 0; padding: 0; border: 1px solid #ffffff1f; border-radius: 50%; background: #3b3b3f; color: #ededed; font-size: 0; }
+#el-music-recommendation-panel .el-music-recommendation-play::before { content: ''; position: absolute; top: 50%; left: calc(50% + 2px); transform: translate(-50%,-50%); width: 11px; height: 13px; background: currentColor; clip-path: polygon(0 0,100% 50%,0 100%); }
+#el-music-recommendation-panel .el-music-recommendation-play:hover:not(:disabled) { background: #4b4b50; }
+#el-music-recommendation-panel .el-music-recommendation-play:active:not(:disabled) { background: #58585e; }
+#el-music-recommendation-panel .el-music-recommendation-play:disabled { background: #303033; border-color: #3a3a3e; color: #73737a; }
+#el-music-recommendation-panel .el-music-recommendation-details { color: #b6b6bc; font-size: 11px; text-decoration: none; }
+#el-music-recommendation-panel .el-music-recommendation-details:hover { color: #fa7887; }
+#el-music-recommendation-panel .el-music-discovery-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 22px 12px 0; }
+#el-music-recommendation-panel .el-music-recommendation-retry { padding: 6px 14px; border: 0; border-radius: 6px; background: #38383b; color: #fa7887; font-size: 13px; }
+#el-music-recommendation-panel .el-music-recommendation-retry:hover:not(:disabled) { background: #454549; }
+#el-music-recommendation-panel .el-music-recommendation-retry:disabled { color: #88888f; }
+#el-music-recommendation-panel :focus-visible { outline: 2px solid #fa7887; outline-offset: 3px; }
+#el-music-recommendation-panel ::selection { color: #fff; background: #a52942; }
+@media (max-width: 1050px) {
+  #el-music-recommendation-panel { padding: 22px 20px 32px; }
+  #el-music-recommendation-panel .el-music-recommendation-card { gap: 12px; padding-inline: 4px; }
+}
+@container related (min-width: 840px) {
+  #el-music-recommendation-panel .el-music-recommendation-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@container related (min-width: 1280px) {
+  #el-music-recommendation-panel .el-music-recommendation-list { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+
+/* Ítems propios en la barra lateral de Apple: heredan las clases de un ítem clonado; el botón se resetea
+   para verse como el enlace de Apple y los iconos se trazan como los de la barra. Los botones de arriba quedan ocultos. */
+html.el-music-shell .el-music-nav-item button.navigation-item__link { display: block; border: 0; background: transparent; font: inherit; color: inherit; text-align: start; cursor: pointer; } /* margen y padding: los de la clase de Apple */
+html.el-music-shell .el-music-nav-item button.navigation-item__link:disabled { cursor: default; }
+html.el-music-shell .el-music-nav-item--disabled .navigation-item__content { opacity: .45; }
+/* Trazo con el mismo color que Apple usa para rellenar sus iconos de la barra (variable del ítem; azul o el del tema). */
+html.el-music-shell .el-music-nav-item svg path { fill: none; stroke: var(--navigation-item-icon-color, var(--systemPrimary, currentColor)); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Un panel propio abierto (New releases, Related music) marca su ítem; el de Apple queda como uno más. */
+html.el-music-own-nav .navigation-items .navigation-item--selected:not(.el-music-nav-item) { background-color: transparent; --navigation-item-icon-color: inherit; --navigation-item-text-color: inherit; }
+html.el-music-own-nav .navigation-items .navigation-item--selected:not(.el-music-nav-item) .navigation-item__content { font-weight: inherit; }
+html.el-music-shell #el-music-open-recommendations, html.el-music-shell #el-music-open-new-releases { display: none; }
+
+/* Aviso inmediato al Play (desde 0.1.52 sin tapar el LCD): un anillo gira sobre la portada mientras las
+   filas del LCD muestran lo pedido (renderLcdLine). */
+html.el-music-shell #el-music-lcd-pending { position: absolute; left: 3px; top: 3px; width: 38px; height: 38px; z-index: 3; display: grid; place-items: center; border-radius: 4px; background: rgba(43, 43, 43, .72); pointer-events: none; }
+html.el-music-shell #el-music-lcd-pending[hidden] { display: none; }
+html.el-music-shell #el-music-lcd-pending .el-music-lcd-pending__spinner { width: 14px; height: 14px; border: 2px solid #ededed; border-right-color: transparent; border-radius: 50%; animation: el-music-spin .8s linear infinite; }
+html.el-music-shell .el-music-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@keyframes el-music-spin { to { transform: rotate(360deg); } }
+/* El ▶ de la fila pedida gira mientras se espera. */
+.el-music-releases .el-music-releases-play.el-music-pending { display: inline-flex; }
+.el-music-releases .el-music-releases-play.el-music-pending::before { width: 8px; height: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; margin-left: 0; animation: el-music-spin .8s linear infinite; }
+/* Disco que suena en la lista de discos: ▶ rojo en lugar del número, como en las playlists. */
+.el-music-releases tbody tr.is-playing .el-music-releases-index > span { font-size: 0; }
+.el-music-releases tbody tr.is-playing .el-music-releases-index > span::before { content: ''; display: inline-block; width: 0; height: 0; border-left: 8px solid #fa2d48; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; vertical-align: middle; }
+.el-music-releases tbody tr.is-playing td[data-key="title"] a { color: #fa2d48; }

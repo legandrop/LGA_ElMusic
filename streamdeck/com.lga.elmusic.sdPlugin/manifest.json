@@ -1,0 +1,71 @@
+{
+  "UUID": "com.lga.elmusic",
+  "Name": "El Music",
+  "Version": "0.0.0.0",
+  "Author": "LGA",
+  "Description": "Control El Music: open or minimize it, previous, play/pause, next and add the playing song to a playlist.",
+  "Category": "El Music",
+  "CategoryIcon": "imgs/category",
+  "Icon": "imgs/plugin",
+  "URL": "",
+  "SDKVersion": 2,
+  "CodePath": "bin/plugin.js",
+  "Nodejs": { "Version": "20", "Debug": "disabled" },
+  "OS": [
+    { "Platform": "windows", "MinimumVersion": "10" },
+    { "Platform": "mac", "MinimumVersion": "13" }
+  ],
+  "Software": { "MinimumVersion": "6.5" },
+  "Actions": [
+    {
+      "Name": "Open / Minimize",
+      "UUID": "com.lga.elmusic.window",
+      "Icon": "imgs/actions/window",
+      "Tooltip": "Open El Music or bring it to the front; minimize it if it is already in front",
+      "Controllers": ["Keypad"],
+      "SupportedInMultiActions": true,
+      "States": [{ "Image": "imgs/keys/window", "ShowTitle": false }]
+    },
+    {
+      "Name": "Previous",
+      "UUID": "com.lga.elmusic.previous",
+      "Icon": "imgs/actions/previous",
+      "Tooltip": "Previous song in El Music",
+      "Controllers": ["Keypad"],
+      "SupportedInMultiActions": true,
+      "States": [{ "Image": "imgs/keys/previous", "ShowTitle": false }]
+    },
+    {
+      "Name": "Play / Pause",
+      "UUID": "com.lga.elmusic.playpause",
+      "Icon": "imgs/actions/playpause",
+      "Tooltip": "Play or pause El Music",
+      "Controllers": ["Keypad"],
+      "SupportedInMultiActions": true,
+      "DisableAutomaticStates": true,
+      "States": [
+        { "Image": "imgs/keys/play", "ShowTitle": false },
+        { "Image": "imgs/keys/pause", "ShowTitle": false }
+      ]
+    },
+    {
+      "Name": "Next",
+      "UUID": "com.lga.elmusic.next",
+      "Icon": "imgs/actions/next",
+      "Tooltip": "Next song in El Music",
+      "Controllers": ["Keypad"],
+      "SupportedInMultiActions": true,
+      "States": [{ "Image": "imgs/keys/next", "ShowTitle": false }]
+    },
+    {
+      "Name": "Add to Playlist",
+      "UUID": "com.lga.elmusic.addtoplaylist",
+      "Icon": "imgs/actions/addtoplaylist",
+      "Tooltip": "Add the playing song to the playlist chosen for this key",
+      "PropertyInspectorPath": "ui/playlist.html",
+      "Controllers": ["Keypad"],
+      "SupportedInMultiActions": true,
+      "States": [{ "Image": "imgs/keys/addtoplaylist", "TitleAlignment": "bottom", "FontSize": "10" }]
+    }
+  ]
+}

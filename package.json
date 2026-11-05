@@ -1,0 +1,32 @@
+{
+  "name": "lga-el-music",
+  "productName": "LGA El Music",
+  "version": "0.91.0",
+  "description": "Personal desktop client for the official Apple Music web player",
+  "private": true,
+  "main": "dist/main.js",
+  "author": "LGA",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-ui.mjs && node scripts/pack-streamdeck.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && tsc -p tsconfig.test.json && node scripts/test.mjs",
+    "dev": "npm run build && electron .",
+    "stage:win": "npm run build && node scripts/package.mjs win stage",
+    "package:win": "node scripts/package.mjs win finalize",
+    "prototype:win": "node scripts/package.mjs win prototype",
+    "stage:mac": "npm run build && node scripts/package.mjs mac stage",
+    "package:mac": "node scripts/package.mjs mac finalize",
+    "prototype:mac": "node scripts/package.mjs mac prototype",
+    "verify:package": "node scripts/verify-package.mjs",
+    "qa": "npm run build && electron . --qa"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "electron": "github:castlabs/electron-releases#v44.5.1+wvcus",
+    "electron-builder": "26.15.3",
+    "typescript": "5.9.3"
+  }
+}
